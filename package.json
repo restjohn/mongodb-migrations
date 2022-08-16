@@ -34,7 +34,7 @@
     "coffeescript": "^2.7.0",
     "lodash": "^4.13.0",
     "mkdirp": "^0.5.1",
-    "mongodb": "^2.2.1",
+    "mongodb": "^4.8.1",
     "nomnom": "^1.6.2"
   },
   "devDependencies": {
