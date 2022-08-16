@@ -68,7 +68,7 @@ exporting the configuration object. This is useful when you already have configu
 data (potentially in a different format) and want to avoid duplication. See `test/mm-config.coffee`
 for an example of this usage.
 
-In case of `coffee` the `coffee-script >= 1.7.0` package must be importable
+In case of `coffee` the `coffeescript >= 2.7.0` package must be importable
 from the current directory (include it as your project's dependency).
 
 The configuration object can have the following keys:
@@ -197,7 +197,7 @@ The migration process is stopped instantly if some migration fails
 See [Configuration](#configuration) if your config file has
 non-standard name.
 
-If you have `.coffee` migration files, `coffee-script >= 1.7.0` package
+If you have `.coffee` migration files, `coffeescript >= 2.7.0` package
 must be importable from the current directory.
 
 ### Debugging migrations
@@ -355,7 +355,7 @@ and `down` _[optional]_ — see [Creating Migrations](#creating-migrations)
 for explanation,
 1. have filenames ending in `.js` or `.coffee`;
 1. if the migration file has `.coffee` extension, the
-`coffee-script >= 1.7.0` package must be importable
+`coffeescript >= 2.7.0` package must be importable
 from the current directory.
 
 To run the migrations from the `directory` call
