@@ -35,7 +35,7 @@
     "lodash": "^4.17.21",
     "mkdirp": "^0.5.1",
     "mongodb": "^2.2.1",
-    "nomnom": "^1.6.2"
+    "nomnom": "^1.8.1"
   },
   "devDependencies": {
     "grunt": "^1.5.3",
