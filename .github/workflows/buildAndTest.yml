@@ -33,9 +33,3 @@ jobs:
       env:
         JOB_CONTEXT: ${{ toJson(matrix) }}
       run: echo "$JOB_CONTEXT"
-    - name: Coveralls
-      if: matrix.node-version == '14.x'
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: ./docs/coverage/lcov.info
