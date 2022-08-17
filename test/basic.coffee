@@ -50,10 +50,11 @@ describe 'Migrator', ->
       res.should.be.ok()
       res['1'].should.be.ok()
       res['1'].status.should.be.equal 'ok'
-      coll.find({name: 'tobi'}).count (err, count) ->
-        return done(err) if err
+      coll.countDocuments({name: 'tobi'}).then (count) ->
         count.should.be.equal 1
         done()
+      .catch (err) ->
+        return done(err)
 
   it 'should timeout migration and return error', (done) ->
     migrator.add
@@ -76,13 +77,15 @@ describe 'Migrator', ->
       return done(err) if err
       migrator.rollback (err, res) ->
         return done(err) if err
-        coll.find({name: 'tobi'}).count (err, count) ->
-          return done(err) if err
+        coll.countDocuments({name: 'tobi'}).then (count) ->
           count.should.be.equal 0
-          coll.find({name: 'loki'}).count (err, count) ->
-            return done(err) if err
+          coll.countDocuments({name: 'loki'}).then (count) ->
             count.should.be.equal 1
             done()
+          .catch (err) ->
+            return done(err)
+        .catch (err) ->
+          return done(err)
 
   it 'should skip on consequent runs', (done) ->
     migrator.add

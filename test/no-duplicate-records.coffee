@@ -28,21 +28,17 @@ describe 'Migrations Collection', ->
         coll.insertOne name: 'tobi', cb
     migrator.migrate (err, res) ->
       return done(err) if err
-      coll.find({name: 'tobi'}).count (err, count) ->
-        return done(err) if err
+      coll.countDocuments({name: 'tobi'}).then (count) ->
         count.should.be.equal 1
-        migrationColl.find({}).count (err, count) ->
-          return done(err) if err
+        migrationColl.countDocuments({}).then (count) ->
           count.should.be.equal 1
 
           # run again
           migrator.migrate (err, res) ->
             return done(err) if err
-            coll.find({name: 'tobi'}).count (err, count) ->
-              return done(err) if err
+            coll.countDocuments({name: 'tobi'}).then (count) ->
               count.should.be.equal 1
-              migrationColl.find({}).count (err, count) ->
-                return done(err) if err
+              migrationColl.countDocuments({}).then (count) ->
                 # ensure that we didn't create the duplicate
                 count.should.be.equal 1
                 done()

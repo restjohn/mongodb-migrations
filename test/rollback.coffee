@@ -26,16 +26,13 @@ describe 'Migrator Rollback', ->
 
     migrator.runFromDir dir, (err, res) ->
       return done(err) if err
-      migrationsCol.find().count (err, count) ->
-        return done(err) if err
+      migrationsCol.countDocuments().then (count) ->
         count.should.be.equal 4
         migrator.rollback (err, res) ->
           return done(err) if err
-          coll.find().count (err, count) ->
-            return done(err) if err
+          coll.countDocuments().then (count) ->
             count.should.be.equal 0
 
-            migrationsCol.find().count (err, count) ->
-              return done(err) if err
+            migrationsCol.countDocuments().then (count) ->
               count.should.be.equal 0
               done()
