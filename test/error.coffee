@@ -6,12 +6,18 @@ describe 'Migrator Errors Handling', ->
   client = null
   coll = null
 
+  before () ->
+    testsCommon.before()
+
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
       {migrator, client} = res
       coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
+
+  after () ->
+    testsCommon.after()
 
   it 'should run migrations and stop on the first error', (done) ->
     migrator.add

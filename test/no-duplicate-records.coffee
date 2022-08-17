@@ -7,6 +7,9 @@ describe 'Migrations Collection', ->
   coll = null
   migrationColl = null
 
+  before () ->
+    testsCommon.before()
+
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
       {migrator, client, config} = res
@@ -14,6 +17,9 @@ describe 'Migrations Collection', ->
       coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
+
+  after () ->
+    testsCommon.after()
 
   it 'should run migrations and only record them once', (done) ->
     migrator.add

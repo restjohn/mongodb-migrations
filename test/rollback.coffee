@@ -7,12 +7,18 @@ describe 'Migrator Rollback', ->
   client = null
   coll = null
 
+  before () ->
+    testsCommon.before()
+
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
       {migrator, client} = res
       coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
+
+  after () ->
+    testsCommon.after()
 
   it 'should cleanup the migrations collection properly', (done) ->
     dir = path.join __dirname, 'migrations'

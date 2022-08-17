@@ -7,12 +7,18 @@ describe 'Migrator from Directory', ->
   client = null
   coll = null
 
+  before () ->
+    testsCommon.before()
+
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
       {migrator, client} = res
       coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
+
+  after () ->
+    testsCommon.after()
 
   it 'should run migrations from directory', (done) ->
     dir = path.join __dirname, 'migrations'
