@@ -15,7 +15,7 @@ describe 'Migrations Collection', ->
       {migrator, client, config} = res
       migrationColl = client.db().collection(config.collection)
       coll = client.db().collection 'test'
-      coll.remove {}, ->
+      coll.deleteMany {}, ->
         done()
 
   after () ->
@@ -25,7 +25,7 @@ describe 'Migrations Collection', ->
     migrator.add
       id: 'm1'
       up: (cb) ->
-        coll.insert name: 'tobi', cb
+        coll.insertOne name: 'tobi', cb
     migrator.migrate (err, res) ->
       return done(err) if err
       coll.find({name: 'tobi'}).count (err, count) ->

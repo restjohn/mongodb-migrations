@@ -13,7 +13,7 @@ describe 'Migrator', ->
     testsCommon.beforeEach (res) ->
       {migrator, client} = res
       coll = client.db().collection 'test'
-      coll.remove {}, ->
+      coll.deleteMany {}, ->
         done()
 
   after () ->
@@ -44,7 +44,7 @@ describe 'Migrator', ->
     migrator.add
       id: '1'
       up: (cb) ->
-        coll.insert name: 'tobi', cb
+        coll.insertOne name: 'tobi', cb
     migrator.migrate (err, res) ->
       return done(err) if err
       res.should.be.ok()
@@ -69,7 +69,7 @@ describe 'Migrator', ->
     migrator.add
       id: 1
       up: (cb) ->
-        coll.insert name: 'tobi', cb
+        coll.insertOne name: 'tobi', cb
       down: (cb) ->
         coll.updateMany { name: 'tobi' }, { $set: { name: 'loki' } }, null, cb
     migrator.migrate (err, res) ->
@@ -88,7 +88,7 @@ describe 'Migrator', ->
     migrator.add
       id: 1
       up: (cb) ->
-        coll.insert name: 'tobi', cb
+        coll.insertOne name: 'tobi', cb
       down: (cb) ->
         coll.updateMany { name: 'tobi' }, { $set: { name: 'loki' } }, null, cb
     migrator.migrate (err, res) ->

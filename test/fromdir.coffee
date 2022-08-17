@@ -14,7 +14,7 @@ describe 'Migrator from Directory', ->
     testsCommon.beforeEach (res) ->
       {migrator, client} = res
       coll = client.db().collection 'test'
-      coll.remove {}, ->
+      coll.deleteMany {}, ->
         done()
 
   after () ->

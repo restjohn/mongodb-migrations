@@ -19,7 +19,7 @@ exports.beforeEach = (done) ->
     if err
       console.error err
       throw err
-    client.db().collection(config.collection).remove {}, ->
+    client.db().collection(config.collection).deleteMany {}, ->
       migrator = new mm.Migrator config, null
       done { migrator, client, config }
 
