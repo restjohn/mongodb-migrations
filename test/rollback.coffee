@@ -4,19 +4,19 @@ testsCommon = require './common'
 
 describe 'Migrator Rollback', ->
   migrator = null
-  db = null
+  client = null
   coll = null
 
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
-      {migrator, db} = res
-      coll = db.collection 'test'
+      {migrator, client} = res
+      coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
 
   it 'should cleanup the migrations collection properly', (done) ->
     dir = path.join __dirname, 'migrations'
-    migrationsCol = db.collection '_migrations'
+    migrationsCol = client.db().collection '_migrations'
 
     migrator.runFromDir dir, (err, res) ->
       return done(err) if err

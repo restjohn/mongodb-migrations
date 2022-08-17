@@ -22,8 +22,8 @@ class Migrator
 
     @_dbReady = new Promise.fromCallback (cb) ->
       mongoConnect dbConfig, cb
-    .then (db) =>
-      @_db = db
+    .then (client) =>
+      @_client = client
 
     @_collName = dbConfig.collection
     @_timeout = dbConfig.timeout
@@ -42,7 +42,7 @@ class Migrator
     @_m = @_m.concat array
 
   _coll: ->
-    @_db.collection(@_collName)
+    @_client.db().collection(@_collName)
 
   _runWhenReady: (direction, cb, progress) ->
     if @_isDisposed
@@ -144,7 +144,7 @@ class Migrator
           allDone(err)
         , @_timeout
 
-      context = { db: @_db, log: userLog }
+      context = { db: @_client.db(), log: userLog }
       fn.call context, (err) ->
         return if isCallbackCalled
         clearTimeout timeoutId
@@ -217,7 +217,7 @@ class Migrator
     @_isDisposed = true
     onSuccess = =>
       try
-        @_db.close()
+        @_client.close()
         cb?(null)
       catch e
         cb?(e)

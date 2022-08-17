@@ -12,10 +12,10 @@ module.exports =
   config: config
 
   beforeEach: (done) ->
-    mongoConnect config, (err, db) ->
+    mongoConnect config, (err, client) ->
       if err
         console.error err
         throw err
-      db.collection(config.collection).remove {}, ->
+      client.db().collection(config.collection).remove {}, ->
         migrator = new mm.Migrator config, null
-        done { migrator, db, config }
+        done { migrator, client, config }

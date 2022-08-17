@@ -4,13 +4,13 @@ testsCommon = require './common'
 
 describe 'Migrator from Directory', ->
   migrator = null
-  db = null
+  client = null
   coll = null
 
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
-      {migrator, db} = res
-      coll = db.collection 'test'
+      {migrator, client} = res
+      coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
 

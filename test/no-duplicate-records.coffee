@@ -3,15 +3,15 @@ testsCommon = require './common'
 
 describe 'Migrations Collection', ->
   migrator = null
-  db = null
+  client = null
   coll = null
   migrationColl = null
 
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
-      {migrator, db, config} = res
-      migrationColl = db.collection(config.collection)
-      coll = db.collection 'test'
+      {migrator, client, config} = res
+      migrationColl = client.db().collection(config.collection)
+      coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
 

@@ -3,19 +3,19 @@ testsCommon = require './common'
 
 describe 'Migrator', ->
   migrator = null
-  db = null
+  client = null
   coll = null
 
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
-      {migrator, db} = res
-      coll = db.collection 'test'
+      {migrator, client} = res
+      coll = client.db().collection 'test'
       coll.remove {}, ->
         done()
 
   it 'should exist', (done) ->
     migrator.should.be.ok()
-    db.should.be.ok()
+    client.db().should.be.ok()
     done()
 
   it 'should set default migrations collection', (done) ->
@@ -65,7 +65,7 @@ describe 'Migrator', ->
       up: (cb) ->
         coll.insert name: 'tobi', cb
       down: (cb) ->
-        coll.update { name: 'tobi' }, { name: 'loki' }, cb
+        coll.updateMany { name: 'tobi' }, { $set: { name: 'loki' } }, null, cb
     migrator.migrate (err, res) ->
       return done(err) if err
       migrator.rollback (err, res) ->
@@ -84,7 +84,7 @@ describe 'Migrator', ->
       up: (cb) ->
         coll.insert name: 'tobi', cb
       down: (cb) ->
-        coll.update { name: 'tobi' }, { name: 'loki' }, cb
+        coll.updateMany { name: 'tobi' }, { $set: { name: 'loki' } }, null, cb
     migrator.migrate (err, res) ->
       return done(err) if err
       res['1'].should.be.ok()
