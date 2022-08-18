@@ -24,6 +24,9 @@
     "migrations"
   ],
   "author": "Eugene Mirotin <emirotin@gmail.com>",
+  "contributors": [
+    "Kevin Gilland <kgilland@protonmail.com>"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/emirotin/mongodb-migrations/issues"
