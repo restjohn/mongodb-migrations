@@ -1,6 +1,8 @@
 # mongodb-migrations
 
 > A Node.js migration framework for MongoDB with both programmatic and CLI API.
+>
+>> Forked to upgrade to Mongo 4.x.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -68,7 +70,7 @@ exporting the configuration object. This is useful when you already have configu
 data (potentially in a different format) and want to avoid duplication. See `test/mm-config.coffee`
 for an example of this usage.
 
-In case of `coffee` the `coffee-script >= 1.7.0` package must be importable
+In case of `coffee` the `coffeescript >= 2.7.0` package must be importable
 from the current directory (include it as your project's dependency).
 
 The configuration object can have the following keys:
@@ -84,8 +86,7 @@ The configuration object can have the following keys:
 * `collection` _[optional]_ — The name of the MongoDB collection to track already ran migrations, **defaults to `_migrations`**,
 * `directory` — the directory (path relative to the current folder) to store migration files in and read them from, used when running from the command-line or when using `runFromDir`,
 * `timeout` _[optional]_ — time in milliseconds after which migration should fail if `done()` is not called (use 0 to disable timeout)
-* `poolSize` _[optional, **deprecated, use `options.server.poolSize` instead**]_ - the size of the mongo connection pool,
-* `options` _[optional]_ - arbitrary options passed to the MongoClient (_Note: if not set directly, `options.server.poolSize` defaults to `5`._),
+* `options` _[optional]_ - arbitrary options passed to the MongoClient,
 * `replicaset` _[optional]_ - if using replica sets should be an object of the following structure:
 ```
 name: 'rs-ds023680',
@@ -197,7 +198,7 @@ The migration process is stopped instantly if some migration fails
 See [Configuration](#configuration) if your config file has
 non-standard name.
 
-If you have `.coffee` migration files, `coffee-script >= 1.7.0` package
+If you have `.coffee` migration files, `coffeescript >= 2.7.0` package
 must be importable from the current directory.
 
 ### Debugging migrations
@@ -355,7 +356,7 @@ and `down` _[optional]_ — see [Creating Migrations](#creating-migrations)
 for explanation,
 1. have filenames ending in `.js` or `.coffee`;
 1. if the migration file has `.coffee` extension, the
-`coffee-script >= 1.7.0` package must be importable
+`coffeescript >= 2.7.0` package must be importable
 from the current directory.
 
 To run the migrations from the `directory` call

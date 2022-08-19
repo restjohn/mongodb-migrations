@@ -2,13 +2,26 @@ mm = require '../src/mongodb-migrations'
 testsCommon = require './common'
 
 describe 'Migrator Logging', ->
+  config = null
+
+  before () ->
+    testsCommon.before()
+
+  beforeEach (done) ->
+    testsCommon.beforeEach (res) ->
+      { config } = res
+      done()
+
+  after () ->
+    testsCommon.after()
+
   it 'should allow custom logging', (done) ->
     messages = []
     log = (level, message) ->
       if level == 'user'
         messages.push message
 
-    migrator = new mm.Migrator testsCommon.config, log
+    migrator = new mm.Migrator config, log
 
     migrator.add
       id: '1'

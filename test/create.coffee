@@ -8,10 +8,16 @@ describe 'Migrations Builder', ->
   migrator = null
   dir = path.join __dirname, 'created-migrations'
 
+  before () ->
+    testsCommon.before()
+
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
       { migrator } = res
       rimraf dir, done
+
+  after () ->
+    testsCommon.after()
 
   it 'should create migration stubs for JS', (done) ->
 

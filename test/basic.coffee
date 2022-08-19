@@ -3,19 +3,25 @@ testsCommon = require './common'
 
 describe 'Migrator', ->
   migrator = null
-  db = null
+  client = null
   coll = null
+
+  before () ->
+    testsCommon.before()
 
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
-      {migrator, db} = res
-      coll = db.collection 'test'
-      coll.remove {}, ->
+      {migrator, client} = res
+      coll = client.db().collection 'test'
+      coll.deleteMany {}, ->
         done()
+
+  after () ->
+    testsCommon.after()
 
   it 'should exist', (done) ->
     migrator.should.be.ok()
-    db.should.be.ok()
+    client.db().should.be.ok()
     done()
 
   it 'should set default migrations collection', (done) ->
@@ -38,16 +44,17 @@ describe 'Migrator', ->
     migrator.add
       id: '1'
       up: (cb) ->
-        coll.insert name: 'tobi', cb
+        coll.insertOne name: 'tobi', cb
     migrator.migrate (err, res) ->
       return done(err) if err
       res.should.be.ok()
       res['1'].should.be.ok()
       res['1'].status.should.be.equal 'ok'
-      coll.find({name: 'tobi'}).count (err, count) ->
-        return done(err) if err
+      coll.countDocuments({name: 'tobi'}).then (count) ->
         count.should.be.equal 1
         done()
+      .catch (err) ->
+        return done(err)
 
   it 'should timeout migration and return error', (done) ->
     migrator.add
@@ -63,28 +70,30 @@ describe 'Migrator', ->
     migrator.add
       id: 1
       up: (cb) ->
-        coll.insert name: 'tobi', cb
+        coll.insertOne name: 'tobi', cb
       down: (cb) ->
-        coll.update { name: 'tobi' }, { name: 'loki' }, cb
+        coll.updateMany { name: 'tobi' }, { $set: { name: 'loki' } }, null, cb
     migrator.migrate (err, res) ->
       return done(err) if err
       migrator.rollback (err, res) ->
         return done(err) if err
-        coll.find({name: 'tobi'}).count (err, count) ->
-          return done(err) if err
+        coll.countDocuments({name: 'tobi'}).then (count) ->
           count.should.be.equal 0
-          coll.find({name: 'loki'}).count (err, count) ->
-            return done(err) if err
+          coll.countDocuments({name: 'loki'}).then (count) ->
             count.should.be.equal 1
             done()
+          .catch (err) ->
+            return done(err)
+        .catch (err) ->
+          return done(err)
 
   it 'should skip on consequent runs', (done) ->
     migrator.add
       id: 1
       up: (cb) ->
-        coll.insert name: 'tobi', cb
+        coll.insertOne name: 'tobi', cb
       down: (cb) ->
-        coll.update { name: 'tobi' }, { name: 'loki' }, cb
+        coll.updateMany { name: 'tobi' }, { $set: { name: 'loki' } }, null, cb
     migrator.migrate (err, res) ->
       return done(err) if err
       res['1'].should.be.ok()

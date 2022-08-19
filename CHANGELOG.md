@@ -1,3 +1,9 @@
+## 1.0.0
+
+* **[breaking change]** MongoDB driver updated to 4.x.
+* Tests now use [in-memory mongo db instance](https://www.npmjs.com/package/mongodb-memory-server).
+* Updated to latest versions of most dependencies (minus `mocha`, and `mkdirp`).
+
 ## 0.8.5
 
 * Added support for setting authentication database via the `authSource` string.

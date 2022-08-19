@@ -3,15 +3,21 @@ testsCommon = require './common'
 
 describe 'Migrator Errors Handling', ->
   migrator = null
-  db = null
+  client = null
   coll = null
+
+  before () ->
+    testsCommon.before()
 
   beforeEach (done) ->
     testsCommon.beforeEach (res) ->
-      {migrator, db} = res
-      coll = db.collection 'test'
-      coll.remove {}, ->
+      {migrator, client} = res
+      coll = client.db().collection 'test'
+      coll.deleteMany {}, ->
         done()
+
+  after () ->
+    testsCommon.after()
 
   it 'should run migrations and stop on the first error', (done) ->
     migrator.add

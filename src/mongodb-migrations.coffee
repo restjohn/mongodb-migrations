@@ -22,8 +22,8 @@ class Migrator
 
     @_dbReady = new Promise.fromCallback (cb) ->
       mongoConnect dbConfig, cb
-    .then (db) =>
-      @_db = db
+    .then (client) =>
+      @_client = client
 
     @_collName = dbConfig.collection
     @_timeout = dbConfig.timeout
@@ -42,7 +42,7 @@ class Migrator
     @_m = @_m.concat array
 
   _coll: ->
-    @_db.collection(@_collName)
+    @_client.db().collection(@_collName)
 
   _runWhenReady: (direction, cb, progress) ->
     if @_isDisposed
@@ -87,7 +87,7 @@ class Migrator
     handleMigrationDone = (id) ->
       p = if direction == 'up'
         Promise.fromCallback (cb) ->
-          migrationsCollection.insert { id }, cb
+          migrationsCollection.insertOne { id }, cb
       else
         Promise.fromCallback (cb) ->
           migrationsCollection.deleteMany { id }, cb
@@ -144,7 +144,7 @@ class Migrator
           allDone(err)
         , @_timeout
 
-      context = { db: @_db, log: userLog }
+      context = { db: @_client.db(), log: userLog }
       fn.call context, (err) ->
         return if isCallbackCalled
         clearTimeout timeoutId
@@ -190,7 +190,7 @@ class Migrator
           .map (f) ->
             fileName = path.join dir, f.name
             if fileName.match /\.coffee$/
-              require('coffee-script/register')
+              require('coffeescript/register')
             return { number: f.number, module: require(fileName) }
         cb null, files
 
@@ -217,7 +217,7 @@ class Migrator
     @_isDisposed = true
     onSuccess = =>
       try
-        @_db.close()
+        @_client.close()
         cb?(null)
       catch e
         cb?(e)
