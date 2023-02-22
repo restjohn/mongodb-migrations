@@ -1,6 +1,6 @@
 {
-  "name": "mongodb-migrations",
-  "version": "0.8.5",
+  "name": "@ngageoint/mongodb-migrations",
+  "version": "1.0.0",
   "description": "A migration framework for MongoDB",
   "main": "lib/mongodb-migrations.js",
   "scripts": {
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/emirotin/mongodb-migrations.git"
+    "url": "git://github.com/gillandk/mongodb-migrations.git"
   },
   "keywords": [
     "mongodb",
@@ -29,9 +29,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/emirotin/mongodb-migrations/issues"
+    "url": "https://github.com/gillandk/mongodb-migrations/issues"
   },
-  "homepage": "https://github.com/emirotin/mongodb-migrations",
+  "homepage": "https://github.com/gillandk/mongodb-migrations",
   "dependencies": {
     "bluebird": "^3.7.2",
     "coffeescript": "^2.7.0",

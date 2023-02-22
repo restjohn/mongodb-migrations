@@ -1,8 +1,7 @@
 # mongodb-migrations
 
-> A Node.js migration framework for MongoDB with both programmatic and CLI API.
->
->> Forked to upgrade to Mongo 4.x.
+A Node.js migration framework for MongoDB with both programmatic and CLI API.
+> Forked to upgrade to Mongo 4.x.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -33,7 +32,7 @@
 ## Installation
 
 ```bash
-  npm install mongodb-migrations --save
+  npm install @ngageoint/mongodb-migrations --save
 ```
 
 ## Common Usage (CLI)
@@ -82,7 +81,7 @@ The configuration object can have the following keys:
 * `ssl` _[optional]_ - boolean, if `true`, `'?ssl=true'` is added to the MongoDB URL,
 * `user` _[optional]_ — MongoDB user name when authentication is required,
 * `password` _[optional]_ — MongoDB password when authentication is required,
-* `authDatabase` _[optional]_ - MongoDB database to authenticate the user against,    
+* `authDatabase` _[optional]_ - MongoDB database to authenticate the user against,
 * `collection` _[optional]_ — The name of the MongoDB collection to track already ran migrations, **defaults to `_migrations`**,
 * `directory` — the directory (path relative to the current folder) to store migration files in and read them from, used when running from the command-line or when using `runFromDir`,
 * `timeout` _[optional]_ — time in milliseconds after which migration should fail if `done()` is not called (use 0 to disable timeout)
