@@ -18,3 +18,8 @@ node_modules
 
 
 test/created-migrations
+
+# TypeScript build output
+/lib
+/bin
+/test-out
