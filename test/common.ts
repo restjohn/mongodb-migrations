@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import * as mm from '../lib/mongodb-migrations';
 import { connect as mongoConnect } from '../lib/utils';
-import { Config } from '../lib/types';
+import { Config, LogFn } from '../lib/types';
 
 // Read-only migration fixtures live in the test source tree, which is separate
 // from the compiled test output directory (test-out).
@@ -18,6 +18,12 @@ export const config: Config = {
 
 let mongod: MongoMemoryServer;
 
+// Track every resource handed out during a test so `afterEach` can release it.
+// Open connections keep the event loop alive and would otherwise hang the
+// process after the suite finishes.
+const openClients: MongoClient[] = [];
+const openMigrators: mm.Migrator[] = [];
+
 export interface BeforeEachResult {
   migrator: mm.Migrator;
   client: MongoClient;
@@ -29,22 +35,43 @@ export const before = async (): Promise<void> => {
   config.url = mongod.getUri();
 };
 
+// Create a Migrator that is automatically disposed (and its connection closed)
+// during `afterEach`.
+export const createMigrator = (logFn: LogFn = null, cfg: Config = config): mm.Migrator => {
+  const migrator = new mm.Migrator(cfg, logFn);
+  openMigrators.push(migrator);
+  return migrator;
+};
+
 export const beforeEach = (done: (res: BeforeEachResult) => void): void => {
   mongoConnect(config, (err, client) => {
     if (err) {
       console.error(err);
       throw err;
     }
+    openClients.push(client!);
     client!
       .db()
       .collection(config.collection!)
       .deleteMany({}, () => {
-        const migrator = new mm.Migrator(config, null);
+        const migrator = createMigrator(null);
         done({ migrator, client: client!, config });
       });
   });
 };
 
+const disposeMigrator = (migrator: mm.Migrator): Promise<void> =>
+  new Promise((resolve) => {
+    // `dispose`'s callback fires whether the underlying connection resolved or
+    // failed, so this always settles.
+    migrator.dispose(() => resolve());
+  });
+
+export const afterEach = async (): Promise<void> => {
+  await Promise.all(openMigrators.splice(0).map(disposeMigrator));
+  await Promise.all(openClients.splice(0).map((client) => client.close()));
+};
+
 export const after = async (): Promise<void> => {
-  await mongod.stop();
+  await mongod?.stop();
 };

@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import * as mm from '../lib/mongodb-migrations';
 import { Config } from '../lib/types';
 import * as testsCommon from './common';
 
@@ -17,12 +16,16 @@ describe('Migrator Dispose', () => {
     });
   });
 
+  afterEach(() => {
+    return testsCommon.afterEach();
+  });
+
   after(() => {
     return testsCommon.after();
   });
 
   it('should be disposable', (done) => {
-    const migrator = new mm.Migrator(config, null);
+    const migrator = testsCommon.createMigrator(null);
     const dir = testsCommon.fixturesDir;
     migrator.runFromDir(dir, (err) => {
       if (err) {

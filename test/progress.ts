@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import * as mm from '../lib/mongodb-migrations';
 import { Config, LogFn } from '../lib/types';
 import * as testsCommon from './common';
 
@@ -17,6 +16,10 @@ describe('Migrator Progress Reporting', () => {
     });
   });
 
+  afterEach(() => {
+    return testsCommon.afterEach();
+  });
+
   after(() => {
     return testsCommon.after();
   });
@@ -29,7 +32,7 @@ describe('Migrator Progress Reporting', () => {
       }
     };
 
-    const migrator = new mm.Migrator(config, log);
+    const migrator = testsCommon.createMigrator(log);
 
     migrator.add({
       id: '1',

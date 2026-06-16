@@ -24,6 +24,10 @@ describe('Migrations Collection', () => {
     });
   });
 
+  afterEach(() => {
+    return testsCommon.afterEach();
+  });
+
   after(() => {
     return testsCommon.after();
   });

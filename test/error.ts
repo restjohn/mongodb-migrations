@@ -22,6 +22,10 @@ describe('Migrator Errors Handling', () => {
     });
   });
 
+  afterEach(() => {
+    return testsCommon.afterEach();
+  });
+
   after(() => {
     return testsCommon.after();
   });

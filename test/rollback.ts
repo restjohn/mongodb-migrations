@@ -22,6 +22,10 @@ describe('Migrator Rollback', () => {
     });
   });
 
+  afterEach(() => {
+    return testsCommon.afterEach();
+  });
+
   after(() => {
     return testsCommon.after();
   });

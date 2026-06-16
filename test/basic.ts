@@ -23,6 +23,10 @@ describe('Migrator', () => {
     });
   });
 
+  afterEach(() => {
+    return testsCommon.afterEach();
+  });
+
   after(() => {
     return testsCommon.after();
   });
@@ -49,7 +53,9 @@ describe('Migrator', () => {
     };
     const m2 = new mm.Migrator(config2, null);
     expect((m2 as any)._collName).to.equal('_custom');
-    done();
+    // These connect to a throwaway host; dispose them so their connections
+    // don't leak.
+    m1.dispose(() => m2.dispose(() => done()));
   });
 
   it('should run migrations and return result', (done) => {
