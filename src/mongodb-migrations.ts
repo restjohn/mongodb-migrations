@@ -234,7 +234,6 @@ class Migrator {
 
   migrate(done: DoneCallback, progress?: ProgressCallback): void {
     this._runWhenReady('up', done, progress);
-    return;
   }
 
   rollback(done: DoneCallback, progress?: ProgressCallback): void {
@@ -242,7 +241,6 @@ class Migrator {
       return done(new Error('Rollback can only be ran after migrate'));
     }
     this._runWhenReady('down', done, progress);
-    return;
   }
 
   private _loadMigrationFiles(
