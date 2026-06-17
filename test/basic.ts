@@ -31,10 +31,9 @@ describe('Migrator', () => {
     return testsCommon.after();
   });
 
-  it('should exist', (done) => {
+  it('should exist', function() {
     expect(migrator).to.be.ok;
     expect(client.db()).to.be.ok;
-    done();
   });
 
   it('should set default migrations collection', (done) => {

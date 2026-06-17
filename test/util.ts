@@ -2,87 +2,77 @@ import { expect } from 'chai';
 import { normalizeConfig } from '../lib/utils';
 import { Config } from '../lib/types';
 
-describe('Utils', () => {
-  describe('normalizeConfig', () => {
-    it('should throw without config', (done) => {
+describe('Utils', function() {
+  describe('normalizeConfig', function() {
+    it('should throw without config', function() {
       expect(() => normalizeConfig(undefined as unknown as Config)).to.throw(
         '`config` is not provided or is not an object'
       );
-      done();
     });
 
-    it('should allow config with proper url', (done) => {
+    it('should allow config with proper url', function() {
       const config: Config = {
         url: 'mongodb://aaa.bb.ccc:27101/some-db?ssl=true',
       };
 
       expect(normalizeConfig(config)).to.deep.equal(config);
-      done();
     });
 
-    it('should set default collection', (done) => {
+    it('should set default collection', function() {
       const config: Config = {
         url: 'mongodb://aaa.bb.ccc:27101/some-db?ssl=true',
       };
 
       expect(normalizeConfig(config).collection).to.equal('_migrations');
-      done();
     });
 
-    it('should throw with wrong replicaset 1', (done) => {
+    it('should throw with wrong replicaset 1', function() {
       expect(() => normalizeConfig({ replicaset: 7 } as unknown as Config)).to.throw(
         '`replicaset` is not an object'
       );
-      done();
     });
 
-    it('should throw with wrong replicaset 2', (done) => {
+    it('should throw with wrong replicaset 2', function() {
       expect(() => normalizeConfig({ replicaset: {} } as unknown as Config)).to.throw(
         '`replicaset.name` is not set'
       );
-      done();
     });
 
-    it('should throw with wrong replicaset 3', (done) => {
+    it('should throw with wrong replicaset 3', function() {
       expect(() =>
         normalizeConfig({ replicaset: { name: 'x' } } as unknown as Config)
       ).to.throw('`replicaset.members` is not set or is not an array');
-      done();
     });
 
-    it('should throw with wrong replicaset 4', (done) => {
+    it('should throw with wrong replicaset 4', function() {
       expect(() =>
         normalizeConfig({
           replicaset: { name: 'x', members: 'lol' },
         } as unknown as Config)
       ).to.throw('`replicaset.members` is not set or is not an array');
-      done();
     });
 
-    it('should throw with wrong replicaset 5', (done) => {
+    it('should throw with wrong replicaset 5', function() {
       expect(() =>
         normalizeConfig({
           replicaset: { name: 'x', members: [{ xost: 'x' }] },
         } as unknown as Config)
       ).to.throw('each of `replicaset.members` must have `host` set');
-      done();
     });
 
-    it('should throw without host and replicaset', (done) => {
+    it('should throw without host and replicaset', function() {
       expect(() => normalizeConfig({} as unknown as Config)).to.throw(
         '`host` is required when `replicaset` is not set'
       );
-      done();
     });
 
-    it('should throw without db', (done) => {
+    it('should throw without db', function() {
       expect(() => normalizeConfig({ host: 'localhost' } as Config)).to.throw(
         '`db` is not set'
       );
-      done();
     });
 
-    it('should throw with password but without username', (done) => {
+    it('should throw with password but without username', function() {
       expect(() =>
         normalizeConfig({
           host: 'localhost',
@@ -90,10 +80,9 @@ describe('Utils', () => {
           password: 'very secret password',
         } as Config)
       ).to.throw('`password` provided but `user` is not');
-      done();
     });
 
-    it('should throw with authDatabase but without username', (done) => {
+    it('should throw with authDatabase but without username', function() {
       expect(() =>
         normalizeConfig({
           host: 'localhost',
@@ -101,7 +90,6 @@ describe('Utils', () => {
           authDatabase: 'admin',
         } as Config)
       ).to.throw('`authDatabase` provided but `user` is not');
-      done();
     });
   });
 });

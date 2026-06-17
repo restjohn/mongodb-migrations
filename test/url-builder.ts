@@ -3,17 +3,16 @@ import { buildMongoConnString } from '../lib/url-builder';
 import { Config } from '../lib/types';
 
 describe('Url Builder', () => {
-  it('uses the url as given', (done) => {
+  it('uses the url as given', function() {
     const config: Config = {
       url: 'mongodb://aaa.bb.ccc:27101/some-db?ssl=true',
     };
 
     const connString = buildMongoConnString(config);
     expect(connString).to.equal(config.url);
-    done();
   });
 
-  it('builds a single node url', (done) => {
+  it('builds a single node url', function() {
     const config: Config = {
       user: 'someuser',
       password: 'somepass',
@@ -28,10 +27,9 @@ describe('Url Builder', () => {
       `mongodb://${config.user}:${config.password}@` +
         `${config.host}:${config.port}/${config.db}`
     );
-    done();
   });
 
-  it('builds a single node url with ssl', (done) => {
+  it('builds a single node url with ssl', function() {
     const config: Config = {
       user: 'someuser',
       password: 'somepass',
@@ -47,10 +45,9 @@ describe('Url Builder', () => {
       `mongodb://${config.user}:${config.password}@` +
         `${config.host}:${config.port}/${config.db}?ssl=true`
     );
-    done();
   });
 
-  it('builds a single node url with an authDatabase', (done) => {
+  it('builds a single node url with an authDatabase', function() {
     const config: Config = {
       user: 'someuser',
       password: 'somepass',
@@ -66,10 +63,9 @@ describe('Url Builder', () => {
       `mongodb://${config.user}:${config.password}@` +
         `${config.host}:${config.port}/${config.db}?authSource=${config.authDatabase}`
     );
-    done();
   });
 
-  it('builds a replicaset url with two replicas', (done) => {
+  it('builds a replicaset url with two replicas', function() {
     const config: Config = {
       user: 'someuser',
       password: 'somepass',
@@ -91,10 +87,9 @@ describe('Url Builder', () => {
         `${config.replicaset!.members[1].host}:${config.replicaset!.members[1].port}/` +
         `${config.db}?replicaSet=${config.replicaset!.name}`
     );
-    done();
   });
 
-  it('builds a replicaset url with three replicas', (done) => {
+  it('builds a replicaset url with three replicas', function() {
     const config: Config = {
       user: 'someuser',
       password: 'somepass',
@@ -118,6 +113,5 @@ describe('Url Builder', () => {
         `${config.replicaset!.members[2].host}:${config.replicaset!.members[2].port}/` +
         `${config.db}?replicaSet=${config.replicaset!.name}`
     );
-    done();
   });
 });
