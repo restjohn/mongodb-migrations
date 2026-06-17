@@ -31,8 +31,7 @@ describe('Migrator from Directory', () => {
   });
 
   it('should run migrations from directory', (done) => {
-    const dir = testsCommon.fixturesDir;
-    migrator.runFromDir(dir, (err) => {
+    migrator.runFromDir(testsCommon.fixturesDir, (err) => {
       if (err) {
         return done(err);
       }
