@@ -34,13 +34,14 @@
   ],
   "author": "Eugene Mirotin <emirotin@gmail.com>",
   "contributors": [
-    "Kevin Gilland <kgilland@protonmail.com>"
+    "Kevin Gilland <kgilland@protonmail.com>",
+    "Robert St. John <restjohn@users.noreply.github.com>"
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gillandk/mongodb-migrations/issues"
+    "url": "https://github.com/restjohn/mongodb-migrations/issues"
   },
-  "homepage": "https://github.com/gillandk/mongodb-migrations",
+  "homepage": "https://github.com/restjohn/mongodb-migrations",
   "dependencies": {
     "bluebird": "^3.7.2",
     "lodash": "^4.17.21",
