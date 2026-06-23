@@ -1,28 +1,26 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import Promise from 'bluebird';
-import _ from 'lodash';
-import mkdirp from 'mkdirp';
-import { MongoClient, Collection } from 'mongodb';
-import { repeatString, connect as mongoConnect, normalizeConfig } from './utils';
-import migrationStub = require('./migration-stub');
+import * as fs from 'fs'
+import * as path from 'path'
+import _ from 'lodash'
+import mkdirp from 'mkdirp'
+import { MongoClient } from 'mongodb'
+import { repeatString, connect as mongoConnect, normalizeConfig } from './utils'
+import migrationStub = require('./migration-stub')
 import {
   Config,
   Direction,
   DoneCallback,
   Migration,
-  MigrationContext,
   MigrationId,
   MigrationResult,
   LogFn,
   ProgressCallback,
   ResultMap,
-} from './types';
+} from './types'
 
 const defaultLog: LogFn = (src: string, ...args: unknown[]): void => {
-  const pad = repeatString(' ', src === 'system' ? 4 : 2);
-  console.log(pad, ...args);
-};
+  const pad = repeatString(' ', src === 'system' ? 4 : 2)
+  console.log(pad, ...args)
+}
 
 interface LoadedMigration {
   number: number | null;
@@ -30,217 +28,164 @@ interface LoadedMigration {
 }
 
 class Migrator {
-  private _isDisposed: boolean;
-  private _m: Migration[];
-  private _result: ResultMap;
-  private _dbReady: Promise<void>;
-  private _client!: MongoClient;
-  private _collName: string;
-  private _timeout?: number;
-  private _ranMigrations?: { [id: string]: boolean };
-  private _lastDirection?: Direction;
-  log: LogFn;
+
+  readonly log: LogFn
+
+  private readonly _collName: string
+  private readonly _timeout?: number
+  private readonly _dbReady: Promise<MongoClient>
+  private _isDisposed: boolean = false
+  private _steps: Migration[] = []
+  private _result: ResultMap = {}
+  private _ranMigrations: { [id: string]: boolean } = {}
+  private _lastDirection?: Direction
 
   constructor(dbConfig: Config, logFn?: LogFn) {
     // this will throw in case of invalid values
-    dbConfig = normalizeConfig(dbConfig);
-
-    this._isDisposed = false;
-    this._m = [];
-    this._result = {};
-
-    this._dbReady = Promise.fromCallback<MongoClient>((cb) => {
-      mongoConnect(dbConfig, cb);
-    }).then((client) => {
-      this._client = client;
-    });
-
-    this._collName = dbConfig.collection as string;
-    this._timeout = dbConfig.timeout;
-
+    dbConfig = normalizeConfig(dbConfig)
+    this._collName = dbConfig.collection as string
+    this._timeout = dbConfig.timeout
     if (logFn !== undefined) {
-      this.log = logFn;
+      this.log = logFn
     } else {
-      this.log = defaultLog;
+      this.log = defaultLog
     }
+    this._dbReady = mongoConnect(dbConfig)
   }
 
   add(m: Migration): void {
-    // m must be an { id, up, down } object
-    this._m.push(m);
+    this._steps.push(m)
   }
 
   bulkAdd(array: Migration[]): void {
-    // array must be an Array of { id, up, down } objects
-    this._m = this._m.concat(array);
+    this._steps = this._steps.concat(array)
   }
 
-  private _coll(): Collection {
-    return this._client.db().collection(this._collName);
-  }
-
-  private _runWhenReady(
+  private async _runWhenReady(
     direction: Direction,
-    cb: DoneCallback,
     progress?: ProgressCallback
-  ): void {
+  ): Promise<void> {
     if (this._isDisposed) {
-      return cb(new Error('This migrator is disposed and cannot be used anymore'));
+      throw new Error('This migrator is disposed and cannot be used anymore')
     }
-    const onSuccess = () => {
-      this._ranMigrations = {};
-      this._coll()
-        .find()
-        .toArray((err, docs) => {
-          if (err) {
-            return cb(err);
-          }
-          for (const doc of docs ?? []) {
-            this._ranMigrations![doc.id] = true;
-          }
-          this._run(direction, cb, progress);
-        });
-    };
-    const onError = (err: Error) => cb(err);
-    this._dbReady.then(onSuccess, onError);
-  }
 
-  private _run(direction: Direction, done: DoneCallback, progress?: ProgressCallback): void {
-    let m: Migration[];
-    if (direction === 'down') {
-      m = _(this._m)
-        .reverse()
-        .filter((mig) => {
-          const status = this._result[mig.id]?.status;
-          return !!status && status !== 'skip';
-        })
-        .value();
-    } else {
-      direction = 'up';
-      this._result = {};
-      m = this._m;
-    }
-    this._lastDirection = direction;
-
-    const logFn = this.log;
+    this._lastDirection = direction
+    const steps = direction === 'down' ? this._steps.slice().reverse() : this._steps.slice()
+    const logFn = this.log
     const log = (src: string) => (msg: string) => {
       if (logFn) {
-        logFn(src, msg);
+        logFn(src, msg)
       }
-    };
-    const userLog = log('user');
-    const systemLog = log('system');
-
-    let i = 0;
-    const l = m.length;
-    const migrationsCollection = this._coll();
-
-    const migrationsCollectionUpdatePromises: Promise<unknown>[] = [];
-
-    const handleMigrationDone = (id: MigrationId) => {
-      const p =
-        direction === 'up'
-          ? Promise.fromCallback((cb) => migrationsCollection.insertOne({ id }, cb))
-          : Promise.fromCallback((cb) => migrationsCollection.deleteMany({ id }, cb));
-      migrationsCollectionUpdatePromises.push(p);
-    };
-
-    const allDone = (err?: Error | null) => {
-      Promise.all(migrationsCollectionUpdatePromises).then(() => {
-        done(err, this._result);
-      });
-    };
-
-    const runOne = (): void => {
-      if (i >= l) {
-        return allDone();
-      }
-      const migration = m[i];
-      i += 1;
-
-      const migrationDone = (res: MigrationResult) => {
-        this._result[migration.id] = res;
-        _.defer(() => {
-          progress?.(migration.id, res);
-        });
-        let msg = `Migration '${migration.id}': ${res.status}`;
-        if (res.status === 'skip') {
-          msg += ` (${res.reason})`;
-        }
-        systemLog(msg);
-        if (res.status === 'error') {
-          systemLog('  ' + res.error);
-        }
-        if (
-          res.status === 'ok' ||
-          (res.status === 'skip' && !!res.code && ['no_up', 'no_down'].includes(res.code))
-        ) {
-          handleMigrationDone(migration.id);
-        }
-      };
-
-      const fn = migration[direction];
-      const id = migration.id;
-
-      let skipReason: string | null = null;
-      let skipCode: string | null = null;
-      if (!fn) {
-        skipReason = `no migration function for direction ${direction}`;
-        skipCode = `no_${direction}`;
-      }
-      if (direction === 'up' && id in this._ranMigrations!) {
-        skipReason = 'migration already ran';
-        skipCode = 'already_ran';
-      }
-      if (direction === 'down' && !(id in this._result)) {
-        skipReason = "migration wasn't in the recent `migrate` run";
-        skipCode = 'not_in_recent_migrate';
-      }
-      if (skipReason) {
-        migrationDone({ status: 'skip', reason: skipReason, code: skipCode ?? undefined });
-        return runOne();
-      }
-
-      let isCallbackCalled = false;
-      let timeoutId: ReturnType<typeof setTimeout> | undefined;
-      if (this._timeout) {
-        timeoutId = setTimeout(() => {
-          isCallbackCalled = true;
-          const err = new Error('migration timed-out');
-          migrationDone({ status: 'error', error: err });
-          allDone(err);
-        }, this._timeout);
-      }
-
-      const context: MigrationContext = { db: this._client.db(), log: userLog };
-      fn!.call(context, (err?: Error | null) => {
-        if (isCallbackCalled) {
-          return;
-        }
-        clearTimeout(timeoutId);
-
-        if (err) {
-          migrationDone({ status: 'error', error: err });
-          allDone(err);
-        } else {
-          migrationDone({ status: 'ok' });
-          runOne();
-        }
-      });
-    };
-
-    runOne();
-  }
-
-  migrate(done: DoneCallback, progress?: ProgressCallback): void {
-    this._runWhenReady('up', done, progress);
-  }
-
-  rollback(done: DoneCallback, progress?: ProgressCallback): void {
-    if (this._lastDirection !== 'up') {
-      return done(new Error('Rollback can only be ran after migrate'));
     }
-    this._runWhenReady('down', done, progress);
+    const userLog = log('user')
+    const systemLog = log('system')
+    const db = await this._dbReady.then(x => x.db())
+    const migrationsCollection = db.collection(this._collName)
+
+    const recordMigration = direction === 'down' ?
+      async (id: MigrationId): Promise<unknown> => migrationsCollection.deleteMany({ id }) :
+      async (id: MigrationId): Promise<unknown> => migrationsCollection.insertOne({ id })
+
+    const pastMigrations = await migrationsCollection.find().toArray()
+    for (const pastMigration of pastMigrations ?? []) {
+      this._ranMigrations[pastMigration.id] = true
+    }
+
+    const runStep = async (migration: Migration): Promise<MigrationResult> => {
+      const fn = migration[direction]
+      const id = migration.id
+      if (!fn) {
+        return { status: 'skip', reason: `no ${direction} migration function`, code: `no_${direction}` }
+      }
+      if (direction === 'up' && id in this._ranMigrations) {
+        return { status: 'skip', reason: 'migration already ran', code: 'already_ran' }
+      }
+      if (direction === 'down') {
+        if (!this._result[id]) {
+          return { status: 'skip', reason: 'migration absent from recent migrate', code: 'not_in_recent_migrate' }
+        }
+        else if (this._result[id].status === 'skip') {
+          return { status: 'skip', reason: 'migration skipped in recent migrate', code: 'not_in_recent_migrate' }
+        }
+      }
+      return new Promise<MigrationResult>((resolve, reject) => {
+        const timeoutId = setTimeout(async () => {
+          if (this._timeout) {
+            // error only if a timeout was actually specified
+            resolve({ status: 'error', error: Error('migration timeout') })
+          }
+        }, this._timeout || 0)
+        const context = { db, log: userLog }
+        fn.call(context, (error?: Error | null) => {
+          clearTimeout(timeoutId)
+          if (error) {
+            systemLog(`migration error - ${migration.id}: ` + String(error))
+            resolve({ status: 'error', error })
+          } else {
+            resolve({ status: 'ok' })
+          }
+        })
+      })
+    }
+
+    while (steps.length > 0) {
+      const step = steps.shift()!
+      const stepResult = await runStep(step)
+      this._result[step.id] = stepResult
+      const stepMessage = `Migration '${step.id}': ${stepResult.status}` +
+        (stepResult.status === 'skip' ? ` (${stepResult.reason})` : '') +
+        (stepResult.error ? String(stepResult.error) : '')
+      systemLog(stepMessage)
+      if (stepResult.error) {
+        throw stepResult.error;
+      }
+      if (
+        stepResult.status === 'ok' ||
+        (stepResult.status === 'skip' && [ 'no_up', 'no_down' ].includes(stepResult.code || ''))
+      ) {
+        /*
+         TODO: only recording the migration on successful completion could be a logical hole.  even if an error
+         occurred during a migration step, the step could have made modifications to the database.  not recording
+         the migration will leave the migration step out of the next rollback, inhibiting the step from undoing any
+         partial modifications.
+         */
+        await recordMigration(step.id)
+      }
+      // TODO: remove lodash call
+      _.defer(() => {
+        progress?.(step.id, stepResult)
+      })
+    }
+  }
+
+  async migrate(done: DoneCallback, progress?: ProgressCallback): Promise<void> {
+    try {
+      this._result = {}
+      await this._runWhenReady('up', progress)
+      done(null, this._result)
+    } catch (err) {
+      done(err as Error, this._result)
+    }
+  }
+
+  /**
+   * TODO: This method currently has no path of invocation from the CLI.  Further, this requires
+   * `_lastMigration` to equal `'up'`, and the migrations to rollback must already have an entry in this migrator's
+   * `_result` dictionary, i.e., this migrator must have already run a forward migration in order to run a
+   * rollback, so running a rollback from the CLI is impossible without modification.  The rollback logic always rolls
+   * back all migrations that this migrator ran, instead of one at a time.  This rollback functionality needs much
+   * improvement.
+   */
+  async rollback(done: DoneCallback, progress?: ProgressCallback): Promise<void> {
+    if (this._lastDirection !== 'up') {
+      return done(new Error('Rollback can only be ran after migrate'))
+    }
+    try {
+      await this._runWhenReady('down', progress)
+      done(null, this._result)
+    } catch (err) {
+      done(err as Error)
+    }
   }
 
   private _loadMigrationFiles(
@@ -249,66 +194,63 @@ class Migrator {
   ): void {
     mkdirp(dir, 0o0774, (err) => {
       if (err) {
-        return cb(err);
+        return cb(err)
       }
       fs.readdir(dir, (err, files) => {
         if (err) {
-          return cb(err);
+          return cb(err)
         }
         const loaded = files
-          .filter((f) => path.extname(f) === '.js' && !f.startsWith('.'))
-          .map((f) => {
-            const match = f.match(/^(\d+)/);
-            const n = match ? parseInt(match[1], 10) : null;
-            return { number: n, name: f };
-          })
-          .filter((f) => !!f.name)
-          .sort((f1, f2) => (f1.number ?? 0) - (f2.number ?? 0))
-          .map((f) => {
-            const fileName = path.join(dir, f.name);
-            return { number: f.number, module: require(fileName) as Migration };
-          });
-        cb(null, loaded);
-      });
-    });
+        .filter((f) => path.extname(f) === '.js' && !f.startsWith('.'))
+        .map((f) => {
+          const match = f.match(/^(\d+)/)
+          const n = match ? parseInt(match[1], 10) : null
+          return { number: n, name: f }
+        })
+        .filter((f) => !!f.name)
+        .sort((f1, f2) => (f1.number ?? 0) - (f2.number ?? 0))
+        .map((f) => {
+          const fileName = path.join(dir, f.name)
+          return { number: f.number, module: require(fileName) as Migration }
+        })
+        cb(null, loaded)
+      })
+    })
   }
 
   runFromDir(dir: string, done: DoneCallback, progress?: ProgressCallback): void {
     this._loadMigrationFiles(dir, (err, files) => {
       if (err) {
-        return done(err);
+        return done(err)
       }
-      this.bulkAdd(_.map(files ?? [], 'module') as Migration[]);
-      this.migrate(done, progress);
-    });
+      this.bulkAdd(_.map(files ?? [], 'module') as Migration[])
+      this.migrate(done, progress)
+    })
   }
 
   create(dir: string, id: string, done: (err?: Error | null) => void): void {
     this._loadMigrationFiles(dir, (err, files) => {
       if (err) {
-        return done(err);
+        return done(err)
       }
-      const maxNum = _.maxBy(files ?? [], 'number')?.number ?? 0;
-      const nextNum = maxNum + 1;
-      const slug = (id || '').toLowerCase().replace(/\s+/, '-');
-      const fileName = path.join(dir, `${nextNum}-${slug}.js`);
-      const body = migrationStub(id);
-      fs.writeFile(fileName, body, done);
-    });
+      const maxNum = _.maxBy(files ?? [], 'number')?.number ?? 0
+      const nextNum = maxNum + 1
+      const slug = (id || '').toLowerCase().replace(/\s+/, '-')
+      const fileName = path.join(dir, `${nextNum}-${slug}.js`)
+      const body = migrationStub(id)
+      fs.writeFile(fileName, body, done)
+    })
   }
 
-  dispose(cb?: (err?: Error | null) => void): void {
-    this._isDisposed = true;
-    const onSuccess = () => {
-      try {
-        this._client.close();
-        cb?.(null);
-      } catch (e) {
-        cb?.(e as Error);
-      }
-    };
-    this._dbReady.then(onSuccess, cb);
+  async dispose(cb?: (err?: Error | null) => void): Promise<void> {
+    this._isDisposed = true
+    try {
+      await this._dbReady.then(x => x.close())
+    } catch (err) {
+      return void (cb?.(err as Error))
+    }
+    cb?.(null)
   }
 }
 
-export { Migrator };
+export { Migrator }

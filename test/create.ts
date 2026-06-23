@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as path from 'path';
 import * as fs from 'fs';
-import rimraf from 'rimraf';
+import { native as rimraf } from 'rimraf';
 import * as testsCommon from './common';
 
 describe('Migrations Builder', () => {
@@ -12,11 +12,10 @@ describe('Migrations Builder', () => {
     return testsCommon.before();
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      migrator = res.migrator;
-      rimraf(dir, done);
-    });
+  beforeEach(async () => {
+    const resources = await testsCommon.beforeEach()
+    migrator = resources.migrator;
+    await rimraf(dir);
   });
 
   afterEach(() => {

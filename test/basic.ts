@@ -8,24 +8,17 @@ describe('Migrator', () => {
   let client: MongoClient;
   let coll: Collection;
 
-  before(() => {
-    return testsCommon.before();
+  before(testsCommon.before);
+
+  beforeEach(async function () {
+    const resources = await testsCommon.beforeEach();
+    migrator = resources.migrator
+    client = resources.client
+    coll = client.db().collection('test')
+    await coll.deleteMany({})
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      migrator = res.migrator;
-      client = res.client;
-      coll = client.db().collection('test');
-      coll.deleteMany({}, () => {
-        done();
-      });
-    });
-  });
-
-  afterEach(() => {
-    return testsCommon.afterEach();
-  });
+  afterEach(testsCommon.afterEach);
 
   after(() => {
     return testsCommon.after();
@@ -90,7 +83,7 @@ describe('Migrator', () => {
       if (!err) {
         return done(new Error('migration should have failed'));
       }
-      expect(err.message).to.equal('migration timed-out');
+      expect(err.message).to.equal('migration timeout');
       done();
     });
   });

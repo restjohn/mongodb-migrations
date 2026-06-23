@@ -9,11 +9,9 @@ describe('Migrator Progress Reporting', () => {
     return testsCommon.before();
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      config = res.config;
-      done();
-    });
+  beforeEach(async () => {
+    const resources = await testsCommon.beforeEach()
+    config = resources.config;
   });
 
   afterEach(() => {

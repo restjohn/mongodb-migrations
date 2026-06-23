@@ -4,9 +4,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import './nomnom.d.ts'
 import optparser = require('nomnom');
 import _ from 'lodash';
-import Promise from 'bluebird';
 
 import * as mm from '..';
 import { connect } from '../lib/utils';
@@ -87,9 +87,7 @@ const exit = (msg?: string | Error | null, err?: any): void => {
 
 const dedupe = (opts: Opts): void => {
   readConfig(opts.config);
-  Promise.fromCallback<MongoClientLike>((cb) => {
-    connect(config as Config, cb);
-  })
+  connect(config as Config)
     .then((client) => {
       return client.db().collection((config as Config).collection as string);
     })
@@ -131,9 +129,6 @@ const dedupe = (opts: Opts): void => {
       exit(err.message, err);
     });
 };
-
-// Imported lazily for typing only; mongodb's MongoClient is what `connect` yields.
-type MongoClientLike = import('mongodb').MongoClient;
 
 optparser.script('mm').option('config', {
   metavar: 'FILE',

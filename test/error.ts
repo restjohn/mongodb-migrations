@@ -11,15 +11,12 @@ describe('Migrator Errors Handling', () => {
     return testsCommon.before();
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      migrator = res.migrator;
-      client = res.client;
-      coll = client.db().collection('test');
-      coll.deleteMany({}, () => {
-        done();
-      });
-    });
+  beforeEach(async () => {
+    const resources = await testsCommon.beforeEach();
+    migrator = resources.migrator
+    client = resources.client
+    coll = client.db().collection('test')
+    return coll.deleteMany({})
   });
 
   afterEach(() => {
@@ -30,12 +27,12 @@ describe('Migrator Errors Handling', () => {
     return testsCommon.after();
   });
 
-  it('should run migrations and stop on the first error', (done) => {
+  it('should run migrations and stop on the first error', async () => {
     migrator.add({ id: '1', up: (cb) => cb(null) });
     migrator.add({ id: '2', up: (cb) => cb(null) });
     migrator.add({ id: '3', up: (cb) => cb(new Error('Some error')) });
     migrator.add({ id: '4', up: (cb) => cb(null) });
-    migrator.migrate((err, res) => {
+    return migrator.migrate((err, res) => {
       expect(err!.toString()).to.match(/Some error$/);
 
       expect(res).to.be.ok;
@@ -51,8 +48,6 @@ describe('Migrator Errors Handling', () => {
       expect(res!['3'].error!.toString()).to.match(/Some error$/);
 
       expect(res!['4']).to.be.undefined;
-
-      done();
     });
   });
 });

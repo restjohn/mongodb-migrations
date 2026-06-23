@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { Collection, MongoClient } from 'mongodb';
 import * as testsCommon from './common';
+import type { Migrator } from '../lib/mongodb-migrations'
 
 describe('Migrations Collection', () => {
-  let migrator: import('../lib/mongodb-migrations').Migrator;
+  let migrator: Migrator;
   let client: MongoClient;
   let coll: Collection;
   let migrationColl: Collection;
@@ -12,16 +13,13 @@ describe('Migrations Collection', () => {
     return testsCommon.before();
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      migrator = res.migrator;
-      client = res.client;
-      migrationColl = client.db().collection(res.config.collection!);
-      coll = client.db().collection('test');
-      coll.deleteMany({}, () => {
-        done();
-      });
-    });
+  beforeEach(async () => {
+    const resources = await testsCommon.beforeEach()
+    migrator = resources.migrator;
+    client = resources.client;
+    migrationColl = client.db().collection(resources.config.collection!);
+    coll = client.db().collection('test');
+    return coll.deleteMany({});
   });
 
   afterEach(() => {

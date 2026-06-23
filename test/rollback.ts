@@ -11,15 +11,12 @@ describe('Migrator Rollback', () => {
     return testsCommon.before();
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      migrator = res.migrator;
-      client = res.client;
-      coll = client.db().collection('test');
-      coll.deleteMany({}, () => {
-        done();
-      });
-    });
+  beforeEach(async function () {
+    const resources = await testsCommon.beforeEach();
+    migrator = resources.migrator
+    client = resources.client
+    coll = client.db().collection('test')
+    await coll.deleteMany({})
   });
 
   afterEach(() => {

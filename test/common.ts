@@ -43,21 +43,18 @@ export const createMigrator = (logFn: LogFn = null, cfg: Config = config): mm.Mi
   return migrator;
 };
 
-export const beforeEach = (done: (res: BeforeEachResult) => void): void => {
-  mongoConnect(config, (err, client) => {
-    if (err) {
-      console.error(err);
-      throw err;
-    }
+export const beforeEach = async (): Promise<BeforeEachResult> => {
+  try {
+    const client = await mongoConnect(config)
     openClients.push(client!);
-    client!
-      .db()
-      .collection(config.collection!)
-      .deleteMany({}, () => {
-        const migrator = createMigrator(null);
-        done({ migrator, client: client!, config });
-      });
-  });
+    await client.db().collection(config.collection!).deleteMany({})
+    const migrator = createMigrator(console.log);
+    return { migrator, client: client!, config };
+  }
+  catch(err) {
+    console.error(err);
+    throw err;
+  }
 };
 
 const disposeMigrator = (migrator: mm.Migrator): Promise<void> =>

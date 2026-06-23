@@ -5,8 +5,6 @@ import { Config } from './types';
 
 const DEFAULT_COLLECTION = '_migrations';
 
-export type ConnectCallback = (err?: Error, client?: MongoClient) => void;
-
 const validateConnSettings = (config: Config): void => {
   if (config.url) {
     return;
@@ -61,10 +59,10 @@ export function normalizeConfig(config: Config): Config {
   return config;
 }
 
-export function connect(config: Config, cb: ConnectCallback): void {
+export function connect(config: Config): Promise<MongoClient> {
   const options = config.options ?? {};
   const url = urlBuilder.buildMongoConnString(config);
-  MongoClient.connect(url, options, cb);
+  return MongoClient.connect(url, options);
 }
 
 export function repeatString(str: string, n: number): string {

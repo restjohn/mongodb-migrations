@@ -9,11 +9,9 @@ describe('Migrator Logging', () => {
     return testsCommon.before();
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      config = res.config;
-      done();
-    });
+  beforeEach(async () => {
+    const resources = await testsCommon.beforeEach();
+    config = resources.config
   });
 
   afterEach(() => {
@@ -32,7 +30,7 @@ describe('Migrator Logging', () => {
       }
     };
 
-    const migrator = testsCommon.createMigrator(log);
+    const migrator = testsCommon.createMigrator(log, config);
 
     migrator.add({
       id: '1',

@@ -1,6 +1,5 @@
-import _ from 'lodash';
 import { config } from './common';
 
-export = _.assign({}, config, {
+export = Object.assign({}, config, {
   directory: 'created-migrations',
 });

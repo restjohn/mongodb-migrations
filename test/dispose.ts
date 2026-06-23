@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { Config } from '../lib/types';
-import * as testsCommon from './common';
+import { expect } from 'chai'
+import { Config } from '../lib/types'
+import * as testsCommon from './common'
 
 describe('Migrator Dispose', () => {
   let config: Config;
@@ -9,11 +9,9 @@ describe('Migrator Dispose', () => {
     return testsCommon.before();
   });
 
-  beforeEach((done) => {
-    testsCommon.beforeEach((res) => {
-      config = res.config;
-      done();
-    });
+  beforeEach(async () => {
+    const resources = await testsCommon.beforeEach();
+    config = resources.config
   });
 
   afterEach(() => {
@@ -25,9 +23,8 @@ describe('Migrator Dispose', () => {
   });
 
   it('should be disposable', (done) => {
-    const migrator = testsCommon.createMigrator(null);
-    const dir = testsCommon.fixturesDir;
-    migrator.runFromDir(dir, (err) => {
+    const migrator = testsCommon.createMigrator(null, config);
+    migrator.runFromDir(testsCommon.fixturesDir, (err) => {
       if (err) {
         return done(err);
       }
