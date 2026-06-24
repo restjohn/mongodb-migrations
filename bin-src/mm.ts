@@ -4,10 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import './nomnom.d.ts'
-import optparser = require('nomnom');
-import _ from 'lodash';
-
+import { program as cli, Command } from 'commander';
 import * as mm from '..';
 import { connect } from '../lib/utils';
 import { Config } from '../lib/types';
@@ -22,18 +19,11 @@ const defaults = {
 
 const dir = process.cwd();
 
-let config: Config | null = null;
-
-interface Opts {
-  config?: string;
-  _: string[];
+interface BaseOptions {
+  config: Config;
 }
 
-const readConfig = (fileName?: string | null): void => {
-  if (config) {
-    return;
-  }
-
+const readConfig = (fileName?: string | null): Config => {
   if (!fileName) {
     for (const ext of ['json', 'js']) {
       fileName = `mm-config.${ext}`;
@@ -43,38 +33,32 @@ const readConfig = (fileName?: string | null): void => {
       fileName = null;
     }
   }
-
-  if (!fileName) {
-    exit('Config file not specified, default not found');
-  }
-
   try {
     fileName = path.join(dir, fileName as string);
-    config = _.assign({}, defaults, require(fileName)) as Config;
+    console.log('loading config', fileName);
+    return Object.assign({}, defaults, require(fileName)) as Config;
   } catch (e) {
-    exit(fileName + ' cannot be imported', e as Error);
+    return exit(fileName + ' cannot be imported', e as Error);
   }
 };
 
-const cwd = (): string => path.join(dir, (config as Config).directory as string);
+const cwd = (config: Config): string => path.join(dir, config.directory as string);
 
-const createMigrator = (): mm.Migrator => new Migrator(config as Config);
+const createMigrator = (config: Config): mm.Migrator => new Migrator(config);
 
-const runMigrations = (opts: Opts): void => {
-  readConfig(opts.config);
-  createMigrator().runFromDir(cwd(), exit);
+const runMigrations = function(opts: BaseOptions): void {
+  console.log('parsed options:', opts)
+  createMigrator(opts.config).runFromDir(cwd(opts.config), exit);
 };
 
-const createMigration = (opts: Opts): void => {
-  readConfig(opts.config);
-  const id = opts._.slice(1).join(' ');
+const createMigration = function(id: string, opts: BaseOptions): void {
   if (!id) {
     exit('Migration ID is required');
   }
-  createMigrator().create(cwd(), id, exit);
+  createMigrator(opts.config).create(cwd(opts.config), id, exit);
 };
 
-const exit = (msg?: string | Error | null, err?: any): void => {
+const exit = (msg?: string | Error | null, err?: any): never => {
   if (msg) {
     console.error('Error: ' + msg);
     if (debug && err?.stack) {
@@ -85,11 +69,11 @@ const exit = (msg?: string | Error | null, err?: any): void => {
   process.exit(0);
 };
 
-const dedupe = (opts: Opts): void => {
-  readConfig(opts.config);
-  connect(config as Config)
+const dedupe = (opts: BaseOptions): void => {
+  const { config } = opts;
+  connect(config)
     .then((client) => {
-      return client.db().collection((config as Config).collection as string);
+      return client.db().collection(config.collection as string);
     })
     .then((coll) => {
       console.log('Loading the list of migration records...');
@@ -130,22 +114,34 @@ const dedupe = (opts: Opts): void => {
     });
 };
 
-optparser.script('mm').option('config', {
-  metavar: 'FILE',
-  help: 'The name of the file in the current directory, can be .js or .json.',
-});
+function withGlobalOptions(action: (...args: any[]) => any): (this: Command, ...args: any[]) => any {
+  return function() {
+    const opts = this.optsWithGlobals()
+    if (typeof opts.config !== 'string') {
+      return exit('Config file not specified, default not found');
+    }
+    const { config: configPath } = opts;
+    const config = readConfig(configPath)
+    action(...this.processedArgs, { config })
+  }
+}
 
-optparser.command('migrate').callback(runMigrations);
+cli.name('mm')
+  .configureHelp({ showGlobalOptions: true })
+  .option('--config <file>', 'The name of the file in the current directory; can be .js or .json.  Look for mm-config.js, mm-config.json if unspecified.')
 
-optparser.nocommand().callback(runMigrations);
+cli.command('migrate', { isDefault: true })
+  .description('Apply all migrations that have not yet run.')
+  .action(withGlobalOptions(runMigrations));
 
-optparser.command('create').callback(createMigration);
+cli.command('create')
+  .description('Create a new migration script.')
+  .argument('<migration_id>', '')
+  .action(withGlobalOptions(createMigration));
 
-optparser
+cli
   .command('dedupe')
-  .help(
-    'Remove duplicate entries from the migrations collection. Fixes the regression introduced by 0.8.0 and fixed in 0.8.2.'
-  )
-  .callback(dedupe);
+  .description('Remove duplicate entries from the migrations collection. Fixes the regression introduced by 0.8.0 and fixed in 0.8.2.')
+  .action(withGlobalOptions(dedupe));
 
-optparser.parse();
+cli.parse();
