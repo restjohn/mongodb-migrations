@@ -27,6 +27,14 @@ interface LoadedMigration {
   module: Migration;
 }
 
+/**
+ * TODO:
+ * * Prohibit adding more migrations after the migrator starts running or has already run.
+ * * Support rollback from the CLI.  See comment below.
+ * * Use promises instead of callbacks for public API surface.
+ * * Defer connection until the migration actually starts, instead of connecting in the constructor.
+ * * Separate the `create` logic from Migrator.
+ */
 class Migrator {
 
   readonly log: LogFn
