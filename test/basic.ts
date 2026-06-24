@@ -53,7 +53,7 @@ describe('Migrator', () => {
   it('should run migrations and return result', (done) => {
     migrator.add({
       id: '1',
-      up: (cb) => coll.insertOne({ name: 'tobi' }, cb),
+      up: (cb) => coll.insertOne({ name: 'tobi' }).then(() => cb(), cb),
     });
     migrator.migrate((err, res) => {
       if (err) {
@@ -91,9 +91,9 @@ describe('Migrator', () => {
   it('should allow rollback', (done) => {
     migrator.add({
       id: 1,
-      up: (cb) => coll.insertOne({ name: 'tobi' }, cb),
+      up: (cb) => coll.insertOne({ name: 'tobi' }).then(() => cb(), cb),
       down: (cb) =>
-        coll.updateMany({ name: 'tobi' }, { $set: { name: 'loki' } }, cb),
+        coll.updateMany({ name: 'tobi' }, { $set: { name: 'loki' } }).then(() => cb(), cb),
     });
     migrator.migrate((err) => {
       if (err) {
@@ -121,9 +121,9 @@ describe('Migrator', () => {
   it('should skip on consequent runs', (done) => {
     migrator.add({
       id: 1,
-      up: (cb) => coll.insertOne({ name: 'tobi' }, cb),
+      up: (cb) => coll.insertOne({ name: 'tobi' }).then(() => cb(), cb),
       down: (cb) =>
-        coll.updateMany({ name: 'tobi' }, { $set: { name: 'loki' } }, cb),
+        coll.updateMany({ name: 'tobi' }, { $set: { name: 'loki' } }).then(() => cb(), cb),
     });
     migrator.migrate((err, res) => {
       if (err) {

@@ -33,7 +33,7 @@ describe('Migrations Collection', () => {
   it('should run migrations and only record them once', (done) => {
     migrator.add({
       id: 'm1',
-      up: (cb) => coll.insertOne({ name: 'tobi' }, cb),
+      up: (cb) => coll.insertOne({ name: 'tobi' }).then(() => cb(), cb),
     });
     migrator.migrate((err) => {
       if (err) {

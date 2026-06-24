@@ -3,6 +3,7 @@
 // A CLI utility for mongodb-migrations
 
 import * as fs from 'fs';
+import { ObjectId } from 'mongodb'
 import * as path from 'path';
 import { program as cli, Command } from 'commander';
 import * as mm from '..';
@@ -83,7 +84,7 @@ const dedupe = (opts: BaseOptions): void => {
         .then((docs) => {
           console.log(`Found total of ${docs.length} records. Detecting uniques`);
           const knownIds: { [id: string]: boolean } = {};
-          const mongoIdsToRemove: unknown[] = [];
+          const mongoIdsToRemove: ObjectId[] = [];
           let uniqueIds = 0;
           docs.forEach((d) => {
             if (knownIds[d.id]) {
