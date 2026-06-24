@@ -36,7 +36,6 @@ const readConfig = (fileName?: string | null): Config => {
   }
   try {
     fileName = path.join(dir, fileName as string);
-    console.log('loading config', fileName);
     return Object.assign({}, defaults, require(fileName)) as Config;
   } catch (e) {
     return exit(fileName + ' cannot be imported', e as Error);
@@ -48,7 +47,6 @@ const cwd = (config: Config): string => path.join(dir, config.directory as strin
 const createMigrator = (config: Config): mm.Migrator => new Migrator(config);
 
 const runMigrations = function(opts: BaseOptions): void {
-  console.log('parsed options:', opts)
   createMigrator(opts.config).runFromDir(cwd(opts.config), exit);
 };
 
