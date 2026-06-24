@@ -92,6 +92,7 @@ class Migrator {
     }
 
     const runStep = async (migration: Migration): Promise<MigrationResult> => {
+      systemLog('running migration ' + migration.id)
       const fn = migration[direction]
       const id = migration.id
       if (!fn) {

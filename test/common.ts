@@ -48,7 +48,7 @@ export const beforeEach = async (): Promise<BeforeEachResult> => {
     const client = await mongoConnect(config)
     openClients.push(client!);
     await client.db().collection(config.collection!).deleteMany({})
-    const migrator = createMigrator(console.log);
+    const migrator = createMigrator(null);
     return { migrator, client: client!, config };
   }
   catch(err) {
