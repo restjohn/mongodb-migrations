@@ -1,21 +1,21 @@
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'fs/promises'
 import _ from 'lodash'
-import mkdirp from 'mkdirp'
+import { mkdirpNative as mkdirp } from 'mkdirp'
 import { MongoClient } from 'mongodb'
-import { repeatString, connect as mongoConnect, normalizeConfig } from './utils'
-import migrationStub = require('./migration-stub')
+import * as path from 'path'
 import {
   Config,
   Direction,
   DoneCallback,
+  LogFn,
   Migration,
   MigrationId,
   MigrationResult,
-  LogFn,
   ProgressCallback,
   ResultMap,
 } from './types'
+import { connect as mongoConnect, normalizeConfig, repeatString } from './utils'
+import migrationStub = require('./migration-stub')
 
 const defaultLog: LogFn = (src: string, ...args: unknown[]): void => {
   const pad = repeatString(' ', src === 'system' ? 4 : 2)
@@ -188,58 +188,45 @@ class Migrator {
     }
   }
 
-  private _loadMigrationFiles(
-    dir: string,
-    cb: (err: Error | null, files?: LoadedMigration[]) => void
-  ): void {
-    mkdirp(dir, 0o0774, (err) => {
-      if (err) {
-        return cb(err)
-      }
-      fs.readdir(dir, (err, files) => {
-        if (err) {
-          return cb(err)
-        }
-        const loaded = files
-        .filter((f) => path.extname(f) === '.js' && !f.startsWith('.'))
-        .map((f) => {
-          const match = f.match(/^(\d+)/)
-          const n = match ? parseInt(match[1], 10) : null
-          return { number: n, name: f }
-        })
-        .filter((f) => !!f.name)
-        .sort((f1, f2) => (f1.number ?? 0) - (f2.number ?? 0))
-        .map((f) => {
-          const fileName = path.join(dir, f.name)
-          return { number: f.number, module: require(fileName) as Migration }
-        })
-        cb(null, loaded)
+  private async _loadMigrationFiles(dir: string): Promise<LoadedMigration[]> {
+    await mkdirp(dir, 0o0774)
+    const files = await fs.readdir(dir)
+    return files
+      .filter((f) => path.extname(f) === '.js' && !f.startsWith('.'))
+      .map((f) => {
+        const match = f.match(/^(\d+)/)
+        const n = match ? parseInt(match[1], 10) : null
+        return { number: n, name: f }
       })
-    })
+      .filter((f) => !!f.name)
+      .sort((f1, f2) => (f1.number ?? 0) - (f2.number ?? 0))
+      .map((f) => {
+        const fileName = path.join(dir, f.name)
+        return { number: f.number, module: require(fileName) as Migration }
+      })
   }
 
   runFromDir(dir: string, done: DoneCallback, progress?: ProgressCallback): void {
-    this._loadMigrationFiles(dir, (err, files) => {
-      if (err) {
-        return done(err)
-      }
-      this.bulkAdd(_.map(files ?? [], 'module') as Migration[])
-      this.migrate(done, progress)
-    })
+    this._loadMigrationFiles(dir)
+      .then(loadedMigrations => {
+        this.bulkAdd(loadedMigrations.map(x => x.module) as Migration[])
+        this.migrate(done, progress)
+      })
+      .catch(err => done(err as Error, this._result))
   }
 
   create(dir: string, id: string, done: (err?: Error | null) => void): void {
-    this._loadMigrationFiles(dir, (err, files) => {
-      if (err) {
-        return done(err)
-      }
-      const maxNum = _.maxBy(files ?? [], 'number')?.number ?? 0
-      const nextNum = maxNum + 1
-      const slug = (id || '').toLowerCase().replace(/\s+/, '-')
-      const fileName = path.join(dir, `${nextNum}-${slug}.js`)
-      const body = migrationStub(id)
-      fs.writeFile(fileName, body, done)
-    })
+    this._loadMigrationFiles(dir)
+      .then(loadedMigrations => {
+        const maxNum = _.maxBy(loadedMigrations ?? [], 'number')?.number ?? 0
+        const nextNum = maxNum + 1
+        const slug = (id || '').toLowerCase().replace(/\s+/, '-')
+        const fileName = path.join(dir, `${nextNum}-${slug}.js`)
+        const body = migrationStub(id)
+        return fs.writeFile(fileName, body)
+      })
+      .then(() => done(null))
+      .catch(err => done(err as Error))
   }
 
   async dispose(cb?: (err?: Error | null) => void): Promise<void> {
