@@ -1,7 +1,7 @@
 # mongodb-migrations
 
 A Node.js migration framework for MongoDB with both programmatic and CLI API.
-> Forked to upgrade to Mongo 4.x.
+> Forked to upgrade to Mongo 4.x. Rewritten in TypeScript (ships with type definitions).
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -25,6 +25,7 @@ A Node.js migration framework for MongoDB with both programmatic and CLI API.
   - [`migrator.rollback`](#migratorrollback)
   - [`migrator.create`](#migratorcreate)
   - [`migrator.dispose`](#migratordispose)
+- [Development](#development)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -51,8 +52,8 @@ The CLI app expects a configuration file to be present in the directory where
 the app is being ran.
 
 By default (if the configuration file is not set through the
-command-line argument) the app checks `mm-config.json`, `mm-config.js`,
-and `mm-config.coffee` files for existence.
+command-line argument) the app checks `mm-config.json` and `mm-config.js`
+files for existence.
 
 File name can be passed through the means of `--config` parameter.
 The path is relative to the current directory:
@@ -64,13 +65,10 @@ The path is relative to the current directory:
 In case of `json` the file should contain valid JSON representation of the
 configuration object.
 
-In case of `js` or `coffee` the file should be a CommonJS module
+In case of `js` the file should be a CommonJS module
 exporting the configuration object. This is useful when you already have configuration
-data (potentially in a different format) and want to avoid duplication. See `test/mm-config.coffee`
+data (potentially in a different format) and want to avoid duplication. See `test/mm-config.ts`
 for an example of this usage.
-
-In case of `coffee` the `coffeescript >= 2.7.0` package must be importable
-from the current directory (include it as your project's dependency).
 
 The configuration object can have the following keys:
 
@@ -106,11 +104,10 @@ members: [
 The app simplifies creating migration stubs by providing a command
 
 ```bash
-  mm create MIGRATION-NAME [--coffee|-c]
+  mm create MIGRATION-NAME
 ```
 
 This creates automatically numbered file `NNN-migration-name.js`
-(or `.coffee` if `-c` of `--coffee` flag provided)
 inside of the `directory` defined in the
 [configuration](#configuration) file.
 
@@ -155,12 +152,12 @@ exports.id = 'create-toby';
 
 exports.up = function (done) {
   var coll = this.db.collection('test');
-  coll.insert({ name: 'tobi' }, done);
+  coll.insertOne({ name: 'tobi' }, done);
 };
 
 exports.down = function (done) {
   var coll = this.db.collection('test');
-  coll.remove({}, done);
+  coll.deleteMany({}, done);
 };
 ```
 
@@ -196,9 +193,6 @@ The migration process is stopped instantly if some migration fails
 
 See [Configuration](#configuration) if your config file has
 non-standard name.
-
-If you have `.coffee` migration files, `coffeescript >= 2.7.0` package
-must be importable from the current directory.
 
 ### Debugging migrations
 
@@ -353,10 +347,7 @@ The files must conform to the following rules:
 1. be CommonJS modules and export `id`, `up` _[optional]_,
 and `down` _[optional]_ — see [Creating Migrations](#creating-migrations)
 for explanation,
-1. have filenames ending in `.js` or `.coffee`;
-1. if the migration file has `.coffee` extension, the
-`coffeescript >= 2.7.0` package must be importable
-from the current directory.
+1. have filenames ending in `.js`.
 
 To run the migrations from the `directory` call
 
@@ -395,14 +386,12 @@ It's true even for the migrations that _do not_ have the `down` part.
 To programmatically create a migration stub file, call
 
 ```javascript
-migrator.create(directory, id, doneFn, coffeeScript=false),
+migrator.create(directory, id, doneFn),
 ```
 
 where `directory` is the directory to save the file to,
-`id` is migration's ID, `doneFn` is a callback that gets
-passed the error object in case of error,
-and optional `coffeeScript` flag tells the library to create the stub
-in CoffeeScript instead of plain JavaScript.
+`id` is migration's ID, and `doneFn` is a callback that gets
+passed the error object in case of error.
 
 The ID is lowercased and then dasherized. It's your
 responsibility to assure it's unique.
@@ -425,3 +414,27 @@ The `cb` is a Node-style callback:
 ```javascript
 function cb(error).
 ```
+
+## Development
+
+The library is written in [TypeScript](https://www.typescriptlang.org/)
+(5.x) and compiled to CommonJS.
+
+* Source lives in `src/` and is compiled to `lib/` (the published output,
+  including `.d.ts` type definitions).
+* The CLI source lives in `bin-src/` and is compiled to `bin/mm.js`.
+* Tests live in `test/` and are compiled to `test-out/` before being run.
+
+Common tasks:
+
+```bash
+npm run build      # compile src/ -> lib/ and bin-src/ -> bin/
+npm test           # build everything (incl. tests) and run the test suite
+npm run dev        # recompile src/ on change (tsc --watch)
+npm run clean      # remove build output (lib/, bin/, test-out/)
+```
+
+Tests use [Mocha](https://mochajs.org/) with the
+[Chai](https://www.chaijs.com/) `expect` assertion style, and spin up a
+throwaway database via
+[`mongodb-memory-server`](https://github.com/nodkz/mongodb-memory-server).

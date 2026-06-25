@@ -1,17 +1,26 @@
 {
   "name": "@ngageoint/mongodb-migrations",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A migration framework for MongoDB",
   "main": "lib/mongodb-migrations.js",
+  "types": "lib/mongodb-migrations.d.ts",
   "scripts": {
-    "build": "grunt",
-    "prepublish": "npm test && npm run build",
-    "test": "mocha --compilers coffee:coffeescript/register -r should",
-    "dev": "grunt watch"
+    "clean": "rimraf lib bin test-out",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.bin.json",
+    "build:test": "tsc -p tsconfig.test.json",
+    "pretest": "npm run build && npm run build:test",
+    "test": "mocha",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run clean && npm run build",
+    "dev": "tsc -p tsconfig.build.json -w"
   },
   "bin": {
-    "mm": "./bin/mm"
+    "mm": "./bin/mm.js"
   },
+  "files": [
+    "lib",
+    "bin"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/gillandk/mongodb-migrations.git"
@@ -25,36 +34,44 @@
   ],
   "author": "Eugene Mirotin <emirotin@gmail.com>",
   "contributors": [
-    "Kevin Gilland <kgilland@protonmail.com>"
+    "Kevin Gilland <kgilland@protonmail.com>",
+    "Robert St. John <restjohn@users.noreply.github.com>"
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gillandk/mongodb-migrations/issues"
+    "url": "https://github.com/restjohn/mongodb-migrations/issues"
   },
-  "homepage": "https://github.com/gillandk/mongodb-migrations",
+  "homepage": "https://github.com/restjohn/mongodb-migrations",
   "dependencies": {
-    "bluebird": "^3.7.2",
-    "coffeescript": "^2.7.0",
-    "lodash": "^4.17.21",
-    "mkdirp": "^0.5.6",
-    "mongodb": "^4.8.1",
-    "nomnom": "^1.8.1"
+    "commander": "^15.0.0",
+    "lodash": "^4.18.1",
+    "mkdirp": "^3.0.1"
+  },
+  "peerDependencies": {
+    "mongodb": "^4.4.1 || ^5.0.0 || ^6.0.0  || ^7.0.0"
   },
   "devDependencies": {
-    "grunt": "^1.5.3",
-    "grunt-cli": "^1.4.3",
-    "grunt-contrib-clean": "^2.0.1",
-    "grunt-contrib-coffee": "^2.1.0",
-    "grunt-contrib-concat": "^2.1.0",
-    "grunt-contrib-watch": "^1.1.0",
-    "mocha": "^3.2.0",
-    "mongodb-memory-server": "^8.8.0",
-    "rimraf": "^3.0.2",
-    "should": "^13.2.3"
+    "@types/chai": "^4.3.20",
+    "@types/lodash": "^4.17.0",
+    "@types/mkdirp": "^0.5.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.0",
+    "@types/rimraf": "^3.0.2",
+    "chai": "^4.5.0",
+    "mocha": "^11.7.6",
+    "mongodb-memory-server": "^11.2.0",
+    "rimraf": "^6.1.3",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "mocha": {
+      "serialize-javascript": "^7.0.0",
+      "diff": "^9.0.0"
+    }
   },
   "config": {
     "mongodbMemoryServer": {
-      "version": "4.4.13"
+      "version": "6.0.26"
     }
   }
 }
